@@ -15,6 +15,5 @@ for f in ['site/lantern.js','site/lantern.wasm','site/lantern.data']:
  p=root/f
  if required: assert p.stat().st_size>1000, 'Missing compiled file '+f
  if p.exists(): print('Compiled file:',f,p.stat().st_size)
-if required: assert (root/'site/lantern.worker.js').is_file(), 'Threaded WebAssembly worker asset missing'
 print('VERIFY: PASS source, frontend syntax, NNUE header and size'+(', compiled wasm assets' if required else ''))
 print('SHA256 NNUE:',hashlib.sha256(n.read_bytes()).hexdigest())

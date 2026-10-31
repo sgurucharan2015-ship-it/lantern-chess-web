@@ -19,9 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the Lantern project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Configure Node.js for frontend checks
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
       - name: Install Emscripten in GitHub's temporary runner (NOT your PC)
