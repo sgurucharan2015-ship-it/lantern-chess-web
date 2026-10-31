@@ -1,0 +1,66 @@
+name: Build real Lantern and publish website
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: lantern-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the Lantern project
+        uses: actions/checkout@v4
+      - name: Configure Node.js for frontend checks
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Emscripten in GitHub's temporary runner (NOT your PC)
+        shell: bash
+        run: |
+          git clone --depth=1 https://github.com/emscripten-core/emsdk.git "$RUNNER_TEMP/emsdk"
+          cd "$RUNNER_TEMP/emsdk"
+          ./emsdk install 4.0.7
+          ./emsdk activate 4.0.7
+      - name: Compile the ORIGINAL Lantern C++ engine (three threads, 512 MB hash, H50 NNUE)
+        shell: bash
+        run: |
+          source "$RUNNER_TEMP/emsdk/emsdk_env.sh"
+          em++ --version
+          bash build_web.sh 3
+      - name: Verify engine assets and JavaScript
+        run: |
+          python3 verify_package.py --require-wasm
+          python3 tests/check_release.py
+      - name: Preserve a deployable website ZIP as a build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lantern-ready-to-host
+          path: site/
+          retention-days: 14
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload compiled website for GitHub Pages
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish Lantern to free GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

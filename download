@@ -1,0 +1,9 @@
+# Compiled locally / in GitHub Actions; do not commit generated assets
+site/lantern.js
+site/lantern.wasm
+site/lantern.data
+site/lantern.worker.js
+site/lantern.*.wasm
+*.o
+__pycache__/
+.DS_Store
