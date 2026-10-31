@@ -1,0 +1,7 @@
+AUTOMATED CLOUD BUILD
+
+You do not need Emscripten on your PC. Publish this folder in a GitHub repository with GitHub Pages configured to use GitHub Actions. The workflow then compiles real Lantern in GitHub's cloud and deploys the ready-to-play website.
+
+This ZIP does not yet include compiled lantern.wasm; the cloud CI must complete successfully.
+
+Three threads / 512 MB hash / H50 original Lantern NNUE weights are preserved. Identical native 3350 Elo is NOT technically guaranteed on browsers with slower CPUs, limited memory, or different execution speed.
