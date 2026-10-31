@@ -19,6 +19,10 @@
     sessionStorage.setItem('lantern-coi-reloads', String(count + 1));
     location.reload();
   }
+  /* LANTERN_ISOLATION_TIMEOUT_V1 */
+  if(count>=maxReloads){
+    window.LANTERN_ISOLATION_ERROR='This browser did not enable cross-origin isolation. Three-thread Lantern requires SharedArrayBuffer, HTTPS, and working service workers. Try Chrome with normal site permissions, or use a host that provides COOP/COEP headers.';
+  }
   navigator.serviceWorker.addEventListener('controllerchange', reloadOnce);
   navigator.serviceWorker.register('./coi-service-worker.js', {scope: './'})
     .then(registration => {

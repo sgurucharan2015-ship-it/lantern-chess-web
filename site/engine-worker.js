@@ -5,8 +5,11 @@ const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const send = (type, data = {}) => self.postMessage({type, ...data});
 async function boot(){
   try {
-    importScripts('lantern.js');
-    mod=await LanternWasm({locateFile: f => f});
+        /* LANTERN_ABSOLUTE_ASSET_PATHS_V1 */
+    const asset = name => new URL(name, self.location.href).href;
+    send('bootstatus',{message:'Loading Lantern engine and NNUEâ€¦'});
+    importScripts(asset('lantern.js'));
+    mod=await LanternWasm({locateFile: asset, printErr: (msg)=>send('bootstatus',{message:'Engine: '+String(msg).slice(0,180)})});
     const result=toText('lantern_web_init',[],[]);
     if (!result.startsWith('OK:')) throw new Error(result);
     send('ready',{message:result, initial:JSON.parse(toText('lantern_web_state',['string'],[START]))});

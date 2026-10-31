@@ -1,11 +1,32 @@
 /* Lantern Analysis Studio: native C++ search / NNUE in a dedicated WebAssembly Worker. */
 (() => {
 'use strict';
+/* LANTERN_PREVIEW_BOARD_V1: render the initial chess position independently of engine startup. */
+(function renderStartingBoardImmediately(){
+ const el=document.getElementById('board'); if(!el || el.children.length) return;
+ const initial='rnbqkbnrpppppppp................................PPPPPPPPRNBQKBNR';
+ const files='abcdefgh';
+ for(let display=0;display<64;display++){
+  const rank=7-Math.floor(display/8), file=display%8, p=initial[display];
+  const square=document.createElement('div');
+  square.className='square '+(((rank+file)%2===0)?'dark':'light');
+  square.dataset.square=files[file]+(rank+1);
+  square.setAttribute('role','gridcell');
+  if(p!=='.'){
+   const piece=document.createElement('img'); piece.className='piece';
+   piece.src='pieces/'+(p===p.toUpperCase()?'w':'b')+p.toLowerCase()+'.svg';
+   piece.alt=p; piece.draggable=false; square.appendChild(piece);
+  }
+  if(file===0){const r=document.createElement('span');r.className='coord rank';r.textContent=rank+1;square.appendChild(r);}
+  if(rank===0){const f=document.createElement('span');f.className='coord file';f.textContent=files[file];square.appendChild(f);}
+  el.appendChild(square);
+ }
+})();
 if (!self.crossOriginIsolated) {
  const s=document.getElementById('engineText');
  if(s) s.textContent='Enabling 3-thread browser engine…';
  const m=document.getElementById('message');
- if(m) m.textContent=window.LANTERN_ISOLATION_ERROR||'Enabling isolated browser mode. This page may reload once automatically.';
+ if(m) m.textContent=window.LANTERN_ISOLATION_ERROR||'Enabling browser threads for Lantern. The board is available while setup finishes; the page may reload automatically.';
  return;
 }
 sessionStorage.removeItem('lantern-coi-reloads');
@@ -18,14 +39,25 @@ let history=[{fen:START,uci:'',san:''}], positionVersion=0, analysisVersion=0;
 let ready=false, committing=false, botThinking=false, animationRunning=false, drag=null, pendingPromotion=null;
 let msgIndex=0, requests=new Map();
 const worker=new Worker('engine-worker.js');
+/* LANTERN_ENGINE_BOOT_TIMEOUT_V1 */
+const lanternBootTimer=setTimeout(()=>{
+ if(ready)return;
+ const s=document.getElementById('engineText');
+ const m=document.getElementById('message');
+ if(s)s.textContent='Engine initialization is taking too long';
+ if(m)m.textContent='Lantern has not initialized after 45 seconds. Check whether your browser supports WebAssembly threads and has enough memory (the 3-thread engine reserves substantial memory). You can refresh; the board is shown independently.';
+},45000);
 worker.onmessage=evt=>{
  const d=evt.data;
+ if(d.type==='bootstatus'){const s=document.getElementById('engineText');if(s)s.textContent=d.message;return;}
  if(d.type==='ready'){
+   clearTimeout(lanternBootTimer);
    ready=true;$('engineStatus').classList.add('ready');$('engineText').textContent='Lantern 16.4 · NNUE loaded';
    state=d.initial;renderAll();setMessage('Engine ready — play a move or choose your mode.');
    scheduleEngineAction();return;
  }
  if(d.type==='fatal'){
+   clearTimeout(lanternBootTimer);
    ready=false;$('engineStatus').classList.add('error');$('engineText').textContent='Engine build needed';
    setMessage(d.error+' — '+(d.help||''));
    $('pvValue').textContent='The real Lantern WebAssembly files are missing or failed to initialize. See BUILD_WEB instructions.';
@@ -37,7 +69,7 @@ worker.onmessage=evt=>{
  requests.delete(d.requestId);
  if(d.type==='error')pending.reject(Error(d.error));else pending.resolve(d);
 };
-worker.onerror=e=>{setMessage('Lantern worker could not start: '+e.message);$('engineStatus').classList.add('error');};
+worker.onerror=e=>{clearTimeout(lanternBootTimer);setMessage('Lantern worker could not start: '+e.message);$('engineStatus').classList.add('error');};
 function rpc(type,more={}){
  if(!ready)return Promise.reject(Error('Lantern is still loading.'));
  return new Promise((resolve,reject)=>{
