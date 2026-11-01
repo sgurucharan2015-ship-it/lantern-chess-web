@@ -1,11 +1,11 @@
 /* Lantern's ACTUAL compiled C++ + NNUE engine runs here; no substitute engine. */
 let mod=null;
 const send=(type,data={})=>self.postMessage({type,...data});
-const asset=name=>new URL(name,self.location.href).href;
+const asset=name=>new URL(name+'?v=repair3',self.location.href).href;
 const call=(name,types=[],values=[])=>mod.ccall(name,'string',types,values);
 async function boot(){
  try{
-  send('bootstatus',{message:'Starting Lantern WebAssembly…'});
+  send('bootstatus',{message:'Loading Lantern 16.4 (compatible WASM)…'});
   importScripts(asset('lantern.js'));
   if(typeof LanternWasm!=='function')throw Error('LanternWasm loader not found');
   // CRITICAL: in a Web Worker, document.currentScript is undefined.

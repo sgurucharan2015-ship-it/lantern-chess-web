@@ -183,13 +183,12 @@ async function botMove(){
  }catch(e){setMsg('Lantern move failed: '+e.message);}finally{engineBusy=false;}
 }
 function bootEngine(){
- if(!self.crossOriginIsolated){$('engineText').textContent='Preparing browser threading…';setMsg('Two-sided chess is ready. Enabling Lantern browser threads…');return;}
- try{engineWorker=new Worker('engine-worker.js');}
+ try{engineWorker=new Worker('engine-worker.js?v=repair3');}
  catch(e){engineFailed=true;$('engineText').textContent='Lantern unavailable';setMsg('Engine worker creation failed: '+e.message+'. You can still play both sides.');return;}
  engineWorker.onmessage=event=>{
   const d=event.data;
   if(d.type==='bootstatus'){$('engineText').textContent=d.message;return;}
-  if(d.type==='ready'){engineReady=true;engineFailed=false;$('engineStatus').classList.add('ready');$('engineText').textContent='Lantern 16.4 · NNUE ready';setMsg(endText());queueNext();return;}
+  if(d.type==='ready'){engineReady=true;engineFailed=false;$('engineStatus').classList.add('ready');$('engineText').textContent='Lantern 16.4 · H50 NNUE ready';setMsg(endText());queueNext();return;}
   if(d.type==='fatal'){engineFailed=true;$('engineStatus').classList.add('error');$('engineText').textContent='Lantern engine unavailable';setMsg('Lantern startup error: '+d.error+' — Both sides still works.');return;}
   const pending=requests.get(d.requestId);if(!pending)return;requests.delete(d.requestId);
   if(d.type==='error')pending.reject(Error(d.error));else pending.resolve(d);

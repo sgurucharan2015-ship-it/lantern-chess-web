@@ -13,7 +13,7 @@ for file in ('app.js','engine-worker.js','coi-boot.js','coi-service-worker.js','
 html=(site/'index.html').read_text(encoding='utf-8')
 app=(site/'app.js').read_text(encoding='utf-8')
 worker=(site/'engine-worker.js').read_text(encoding='utf-8')
-for item in ('chess.js?v=4', 'app.js?v=4','engineText','board','fen','mode',
+for item in ('chess.js?v=repair3', 'app.js?v=repair3','engineText','board','fen','mode',
              'thinkTime','promotionDialog'):
     assert item in html, f'Missing HTML component: {item}'
 for feature in ('pointerdown','pointermove','pointerup','possible','capture',
@@ -22,7 +22,7 @@ for feature in ('pointerdown','pointermove','pointerup','possible','capture',
     assert feature in app, f'Missing legal board feature: {feature}'
 assert 'LanternWasm' in worker and 'lantern_web_search' in worker
 assert 'mainScriptUrlOrBlob' in worker, 'Missing threaded worker script URL fix'
-assert 'crossOriginIsolated' in app
+assert 'if(!self.crossOriginIsolated)' not in app
 assert 'Cross-Origin-Opener-Policy' in (site/'coi-service-worker.js').read_text()
 for f in ('lantern.js', 'lantern.wasm', 'lantern.data'):
     assert (site/f).is_file() and (site/f).stat().st_size > 1000, f'Missing real C++ engine: {f}'
