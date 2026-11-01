@@ -24,6 +24,15 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '22'
+      - name: Vendor legal chess rules for browser-local two-sided play
+        shell: bash
+        run: |
+          curl --fail --location --retry 4 --silent --show-error \
+            https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js \
+            -o site/chess.js
+          test -s site/chess.js
+          node --check site/chess.js
+          node -e "const C=require('./site/chess.js').Chess;const b=new C();if(b.moves().length!==20)process.exit(1);b.move('f3');b.move('e5');b.move('g4');b.move('Qh4#');if(!b.in_checkmate())process.exit(2);console.log('CHESS RULES: starting position and checkmate tests passed')"
       - name: Install Emscripten in GitHub's temporary runner (NOT your PC)
         shell: bash
         run: |

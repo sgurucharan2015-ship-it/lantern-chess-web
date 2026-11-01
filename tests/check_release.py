@@ -1,28 +1,29 @@
-"""Fast source/static release preflight. Used in GitHub Actions and locally."""
+"""Verify real Lantern browser assets, legal-chess fallbacks, and UI wiring."""
 from pathlib import Path
 import subprocess
-import re
 
 root = Path(__file__).resolve().parents[1]
 site = root / 'site'
-for f in ['index.html','app.js','style.css','engine-worker.js',
-          'coi-boot.js','coi-service-worker.js','_headers',
-          'nets/full_best.nnue']:
-    assert (site / f).is_file(), f'Missing: {f}'
-for f in ['app.js','engine-worker.js','coi-boot.js','coi-service-worker.js']:
-    subprocess.run(['node','--check',str(site/f)],check=True)
-html = (site/'index.html').read_text()
-app = (site/'app.js').read_text()
-worker = (site/'engine-worker.js').read_text()
-for item in ['coi-boot.js', 'engineText','board','fen','mode', 'thinkTime','promotionDialog']:
-    assert item in html, f'Missing HTML feature: {item}'
-for feature in ['pointerdown','pointermove','pointerup','possible','capture',
-                'mode===\'both\'', 'function gameOver()', 'animationRunning']:
-    assert feature in app, f'Missing board feature: {feature}'
+for file in ('index.html','app.js','style.css','engine-worker.js',
+             'coi-boot.js','coi-service-worker.js','_headers',
+             'nets/full_best.nnue','chess.js'):
+    assert (site/file).is_file(), f'Missing deployed web file: {file}'
+for file in ('app.js','engine-worker.js','coi-boot.js','coi-service-worker.js','chess.js'):
+    subprocess.run(['node','--check',str(site/file)], check=True)
+html=(site/'index.html').read_text(encoding='utf-8')
+app=(site/'app.js').read_text(encoding='utf-8')
+worker=(site/'engine-worker.js').read_text(encoding='utf-8')
+for item in ('chess.js?v=4', 'app.js?v=4','engineText','board','fen','mode',
+             'thinkTime','promotionDialog'):
+    assert item in html, f'Missing HTML component: {item}'
+for feature in ('pointerdown','pointermove','pointerup','possible','capture',
+                'game.game_over()', 'canHuman', 'renderAll(); // Absolutely no engine dependency',
+                'game.moves({square:', 'animate(', 'botMove('):
+    assert feature in app, f'Missing legal board feature: {feature}'
 assert 'LanternWasm' in worker and 'lantern_web_search' in worker
+assert 'mainScriptUrlOrBlob' in worker, 'Missing threaded worker script URL fix'
 assert 'crossOriginIsolated' in app
 assert 'Cross-Origin-Opener-Policy' in (site/'coi-service-worker.js').read_text()
-for f in ['lantern.js', 'lantern.wasm', 'lantern.data']:
-    if (site/f).exists():
-        assert (site/f).stat().st_size > 0
-print('PASS: web files, node syntax, 3-thread isolation shim and GUI features')
+for f in ('lantern.js', 'lantern.wasm', 'lantern.data'):
+    assert (site/f).is_file() and (site/f).stat().st_size > 1000, f'Missing real C++ engine: {f}'
+print('PASS: fully playable manual board, threading loader, C++ NNUE assets and JavaScript')
